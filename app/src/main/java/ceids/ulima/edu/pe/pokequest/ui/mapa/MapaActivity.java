@@ -2,140 +2,112 @@ package ceids.ulima.edu.pe.pokequest.ui.mapa;
 
 import android.content.Intent;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.view.ViewGroup;
+import android.widget.ListView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
-import java.util.Map;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import ceids.ulima.edu.pe.pokequest.Login.LoginActiviry;
 import ceids.ulima.edu.pe.pokequest.R;
+import ceids.ulima.edu.pe.pokequest.beans.Pokeparada;
 import ceids.ulima.edu.pe.pokequest.ui.reto.RetoActivity;
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
-public class MapaActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapaActivity extends Fragment implements OnMapReadyCallback {
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
     private GoogleMap mMap;
 
+    private DatabaseReference mDb;
 
-
-
-//    private Button butScanQR;
-//    private TextView eteTextoQR;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_mapa);
-
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.activity_mapa,container,false);
         setupViews();
-
-//        butScanQR = (Button) findViewById(R.id.butScanQR);
-//        eteTextoQR = (TextView) findViewById(R.id.eteTextoQR);
-
-//        butScanQR.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                new IntentIntegrator(MapaActivity.this).initiateScan();
-//            }
-//        });
+        return v;
     }
 
+
     private void setupViews() {
-        setupActionBar();
 
         setupMapFragment();
 
-        setupNavigationDrawer();
 
-    }
-
-    private void setupActionBar() {
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(myToolbar);
-
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null){
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_ham);
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
     }
 
     private void setupMapFragment() {
         SupportMapFragment mapFragment = SupportMapFragment.newInstance();
 
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.add(R.id.content_frame, mapFragment);
         ft.commit();
 
         mapFragment.getMapAsync(this);
     }
 
-    private void setupNavigationDrawer() {
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
+    private void setupData() {
+        mDb = FirebaseDatabase.getInstance().getReference();
+        cargarPokeparadas();
 
-        NavigationView navView = (NavigationView) findViewById(R.id.navigation_view);
-        navView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+    }
+
+    private void cargarPokeparadas(){
+        mDb.child("pokeparada").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public boolean onNavigationItemSelected(MenuItem item) {
-                item.setChecked(true);
-                switch (item.getItemId()){
-                    case R.id.menSalir:
-                        finish();
-                        break;
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                //List<Pokeparada> pokeparadas = new ArrayList<>();
+                for (DataSnapshot pp : dataSnapshot.getChildren()){
+                    Pokeparada pokeparada = pp.getValue(Pokeparada.class);
+
+                    mMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(
+                                    pokeparada.getLatitud() / 1000000.0,
+                                    pokeparada.getLongitud() / 1000000.0))
+                            .title(pokeparada.getNombre()));
                 }
-                mDrawerLayout.closeDrawers();
-                return true;
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
             }
         });
     }
 
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.map_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                mDrawerLayout.openDrawer(GravityCompat.START);
-                break;
-            case R.id.menPokemonQR:
-                IntentIntegrator integrator=new IntentIntegrator(this);
-                integrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
-                integrator.setPrompt("Scan");
-                integrator.setCameraId(0);
-                integrator.setBeepEnabled(false);
-                integrator.initiateScan();
-                break;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -143,37 +115,8 @@ public class MapaActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         LatLng uLima = new LatLng(-12.085357, -76.971495);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(uLima, 20));
-    }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (!scanResult.getContents().equalsIgnoreCase(null) ) {
-            Intent intent = new Intent(this, RetoActivity.class);
-            intent.putExtra(RetoActivity.RETO_CODIGO, scanResult.getContents());
-            startActivity(intent);
-        }
-
-
-    }
-
-    @Override
-    public void onBackPressed() {
-        new SweetAlertDialog(MapaActivity.this, SweetAlertDialog.WARNING_TYPE)
-                .setTitleText("Quiere Salir")
-                .setContentText("Usted saldra de su cuenta")
-                .setCancelText("No")
-                .setConfirmText("Si")
-                .showCancelButton(true)
-                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
-                    @Override
-                    public void onClick(SweetAlertDialog sweetAlertDialog) {
-                        Intent mainIntent = new Intent(MapaActivity.this,LoginActiviry.class);
-                        MapaActivity.this.startActivity(mainIntent);
-                        MapaActivity.this.finish();
-                    }
-                })
-                .show();
+        setupData();
     }
 
 }
