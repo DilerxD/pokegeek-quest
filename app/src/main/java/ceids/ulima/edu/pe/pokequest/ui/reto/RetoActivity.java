@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.facebook.login.LoginManager;
 import com.google.android.gms.appindexing.Action;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Objects;
 
 import ceids.ulima.edu.pe.pokequest.Codigo.CodigoActiviry;
+import ceids.ulima.edu.pe.pokequest.DrawerActivity;
 import ceids.ulima.edu.pe.pokequest.Login.LoginActiviry;
 import ceids.ulima.edu.pe.pokequest.R;
 import ceids.ulima.edu.pe.pokequest.beans.Correo;
@@ -95,6 +97,7 @@ public class RetoActivity extends AppCompatActivity {
         spiOpciones = (Spinner) findViewById(R.id.spiOpciones);
 
         codigo = getIntent().getStringExtra(RETO_CODIGO);
+        pokeparadaRepetida(mAuth.getCurrentUser().getUid());
 
         database.getReference("pokeparada").child(codigo)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -255,7 +258,7 @@ public class RetoActivity extends AppCompatActivity {
 
     private void marcarRespuestaCorrecta(final String uid) {
         guardarNuevoPuntaje(uid);
-
+        guardarPokeparada(uid);
     }
 
 
@@ -263,20 +266,65 @@ public class RetoActivity extends AppCompatActivity {
     private void guardarNuevoPuntaje(final String uid) {
         database.getReference("usuarios").child(uid).child("puntaje")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                int puntaje = Integer.parseInt(dataSnapshot.getValue().toString());
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        int puntaje = Integer.parseInt(dataSnapshot.getValue().toString());
 
-                HashMap<String, Object> map = new HashMap<>();
-                map.put("puntaje", puntaje + 10);
-                //map.put("pokeparadasRealizadas", pokeparadas.concat())
-                database.getReference("usuarios").child(uid).updateChildren(map);
-            }
+                        HashMap<String, Object> map = new HashMap<>();
+                        map.put("puntaje", puntaje + 10);
+                        //map.put("pokeparadasRealizadas", pokeparadas.concat())
+                        database.getReference("usuarios").child(uid).updateChildren(map);
+                    }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
 
-            }
-        });
+                    }
+                });
+    }
+
+    private void guardarPokeparada(final String uid) {
+        database.getReference("usuarios").child(uid).child("pokeparadasRealizadas")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        String pokeparadasRealizadas = dataSnapshot.getValue().toString();
+                        HashMap<String, Object> map = new HashMap<>();
+                        map.put("pokeparadasRealizadas", pokeparadasRealizadas + codigo);
+                        database.getReference("usuarios").child(uid).updateChildren(map);
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+    }
+
+    private void pokeparadaRepetida(final String uid){
+        database.getReference("usuarios").child(uid).child("pokeparadasRealizadas")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        String pokeparadasRealizadas = dataSnapshot.getValue().toString();
+                        HashMap<String, Object> map = new HashMap<>();
+                        for(int i=0;i<=pokeparadasRealizadas.length();i++){
+                            if(pokeparadasRealizadas.substring(i,i+32).equals(codigo)){
+                                Toast.makeText(RetoActivity.this,"Esta pokeparada ya la haz hecho",Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(RetoActivity.this, DrawerActivity.class);
+                                startActivity(intent);
+                                break;
+
+                            }
+                            i=i+31;
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
     }
 }

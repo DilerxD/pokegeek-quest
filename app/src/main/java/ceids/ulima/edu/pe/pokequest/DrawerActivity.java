@@ -45,7 +45,7 @@ public class DrawerActivity extends AppCompatActivity {
 
         // Initializing Toolbar and setting it as the actionbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
-            setSupportActionBar(toolbar);
+        setSupportActionBar(toolbar);
         MapaActivity mapaActivity = new MapaActivity();
         android.support.v4.app.FragmentTransaction fragmentPromocion = getSupportFragmentManager().beginTransaction();
         fragmentPromocion.replace(R.id.frame,mapaActivity);
@@ -67,15 +67,15 @@ public class DrawerActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(MenuItem menuItem) {
 
 
-                    //Checking if the item is in checked state or not, if not make it in checked state
-                    if(menuItem.isChecked()) menuItem.setChecked(false);
-                    else menuItem.setChecked(true);
+                //Checking if the item is in checked state or not, if not make it in checked state
+                if(menuItem.isChecked()) menuItem.setChecked(false);
+                else menuItem.setChecked(true);
 
-                    //Closing drawer on item click
-                    drawerLayout.closeDrawers();
+                //Closing drawer on item click
+                drawerLayout.closeDrawers();
 
-                    //Check to see which item was being clicked and perform appropriate action
-                    switch (menuItem.getItemId()){
+                //Check to see which item was being clicked and perform appropriate action
+                switch (menuItem.getItemId()){
 
 
                     //Replacing the main content with ContentFragment Which is our Inbox View;
@@ -226,4 +226,3 @@ public class DrawerActivity extends AppCompatActivity {
 
 
 }
-
